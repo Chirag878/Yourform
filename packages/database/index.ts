@@ -5,3 +5,7 @@ import { env } from "./env";
 export const db = drizzle(env.DATABASE_URL);
 export * from "drizzle-orm";
 export default db;
+export * from "./schema";
+export * from "./client";
+export * from "./form-definition";
+export * from "./compile-submission-schema";
