@@ -1,135 +1,129 @@
-# Turborepo starter
+# 🌧️ YourForm — Premium Form Builder SaaS
 
-This Turborepo starter is maintained by the Turborepo core team.
+YourForm is a highly polished, premium Typeform-style Form Builder SaaS. It features the **Minimalist Dark Teal Tech Theme**—a gorgeous, clean developer-focused visual style with flat glass panels, high-contrast borders, and robust solid color-palette presets.
 
-## Using this example
+Creators can build validation-strict forms, publish secure share links, collect submissions, and review aggregated response charts from one cohesive workspace.
 
-Run the following command:
+---
 
-```sh
-npx create-turbo@latest
-```
+## 🛠️ The Tech Stack
 
-## What's inside?
+This project is built using a modern, end-to-end type-safe monorepo architecture:
 
-This Turborepo includes the following packages/apps:
+### 1. Monorepo & Tooling
+*   **[Turborepo](https://turbo.build/repo)**: High-performance build system orchestrating task execution across packages.
+*   **[pnpm Workspaces](https://pnpm.io/workspaces)**: Blazing-fast package manager linking shared monorepo components.
+*   **TypeScript**: 100% type-safe coding across both frontend, backend, and shared libraries.
 
-### Apps and Packages
+### 2. Frontend (`apps/web`)
+*   **[Next.js 16 (App Router)](https://nextjs.org/)**: React framework with Server Actions, running in dev mode on **Turbopack**.
+*   **[tRPC Client](https://trpc.io/)**: Injects fully type-safe API requests, avoiding manual `fetch` calls.
+*   **Tailwind CSS (v4) & Vanilla CSS**: Custom CSS tokens in `globals.css` creating a dark Vercel/Linear-inspired aesthetic.
+*   **[Recharts](https://recharts.org/)**: Elegant interactive data charts on the creator analytics dashboards.
+*   **React Hook Form & Zod**: Client-side form state and validation schemas.
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+### 3. Backend (`apps/api`)
+*   **[Express.js](https://expressjs.com/)**: Standard HTTP server hosting tRPC and OpenAPI.
+*   **[tRPC Server](https://trpc.io/)**: Injects type-safe routers, queries, and mutations directly into the Next.js app.
+*   **[Scalar API Reference](https://scalar.com/)**: Located at `/docs`—an interactive OpenAPI testing documentation dashboard for tRPC REST wrappers.
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+### 4. Database & Logger (`packages/database`, `packages/logger`)
+*   **PostgreSQL**: Cloud database hosted securely on **Supabase**.
+*   **[Drizzle ORM](https://orm.drizzle.team/)**: Type-safe TypeScript ORM managing tables, relationships, and queries.
+*   **Drizzle Studio**: Runs locally on `https://local.drizzle.studio` for instant data checking.
+*   **Winston Logger**: Highly-scalable structured Winston logger shared across apps.
 
-### Utilities
+---
 
-This Turborepo has some additional tools already setup for you:
+## 🎨 Visual Themes & Design
+YourForm features a bespoke **Premium Minimalist Dark Teal Theme**:
+*   **Base Palette**: Deep near-black background (`#0F0F0F`) with high-contrast, flat dark charcoal cards (`#232D3F`) and thin elegant slate borders.
+*   **Accents**: Action buttons and focus borders use a crisp emerald teal (`#008170`) with darker forest green hover accents (`#005B41`).
+*   **Dynamic Preset Palettes**: Individual forms can be morph-styled instantly with solid color presets:
+    *   `Sakura` (Soft Ruby Rose)
+    *   `Slate` (Cool Minimalist Gray)
+    *   `Lantern` (Warm Amber Glow)
+    *   `Aurora` (Sky Cyan)
+    *   `Stadium` (Sports Emerald Mint)
+    *   `Neon` (Royal Indigo)
+    *   `Mist Valley` (Your custom Dark Teal theme)
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+---
 
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
-
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
+## 📁 Directory Structure
 
 ```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+Yourform/
+├── apps/
+│   ├── api/          # Express backend server with tRPC & Scalar docs
+│   └── web/          # Next.js App Router frontend dashboard & forms
+├── packages/
+│   ├── database/     # Drizzle schemas, migrations, and absolute-path seed scripts
+│   ├── logger/       # Winston-configured structured logger
+│   ├── services/     # Shared template catalogs and core business logic
+│   ├── trpc/         # Shared client/server routers and endpoints
+│   └── typescript-config/
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+---
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
+## 🏃‍♂️ Local Development Setup
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
+Follow these steps to fire up the entire project locally:
 
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
+### 1. Configure Environment Variables
+Create a `.env` file at the root:
+```env
+DATABASE_URL="your-supabase-postgres-connection-string"
+NEXT_PUBLIC_API_URL="http://localhost:8000/trpc"
 ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
+### 2. Install Dependencies
+```bash
+pnpm install
 ```
 
-## Useful Links
+### 3. Run Migrations & Seed Templates
+Generate database tables and populate them with the template catalog (contains 10 preset forms):
+```bash
+pnpm --filter @repo/database db:seed
+```
 
-Learn more about the power of Turborepo:
+### 4. Start Development Servers
+```bash
+pnpm dev
+```
+This runs the Next.js app (port 8080), Express backend (port 8000), and Drizzle Studio concurrently.
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+*   **Frontend**: [http://localhost:8080](http://localhost:8080)
+*   **Backend API**: [http://localhost:8000](http://localhost:8000)
+*   **Scalar API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+*   **Drizzle Studio**: [https://local.drizzle.studio](https://local.drizzle.studio)
+
+**Default Demo Credentials:**
+*   **Email**: `creator@yourform.com`
+*   **Password**: `password123`
+
+---
+
+## 📡 Production Deployment
+
+### 1. Backend Deployment (Render)
+1.  Create a new **Web Service** pointing to your repository.
+2.  Set the following settings:
+    *   **Root Directory**: *(Leave blank)*
+    *   **Build Command**: `pnpm install && pnpm exec turbo run build --filter=@repo/api...`
+    *   **Start Command**: `node apps/api/dist/index.js`
+3.  Add the **Environment Variables**:
+    *   `DATABASE_URL`: *(Your Supabase connection string)*
+    *   `NODE_ENV`: `production`
+    *   `BASE_URL`: `https://your-api-service.onrender.com`
+
+### 2. Frontend Deployment (Vercel)
+1.  Import your repository into Vercel.
+2.  Set the following configuration:
+    *   **Framework**: Next.js
+    *   **Root Directory**: `apps/web` (Turn **ON** the *"Keep other directories"* checkbox).
+3.  Add the **Environment Variables**:
+    *   `NEXT_PUBLIC_API_URL`: `https://your-api-service.onrender.com/trpc` *(Your live Render backend url)*
+4.  Click **Deploy**!
