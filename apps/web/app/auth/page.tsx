@@ -99,17 +99,10 @@ export default function AuthPage() {
 
         <div className="glass-panel hidden rounded-lg p-8 lg:block">
           <div className="success-spark flex h-full min-h-[520px] flex-col justify-end rounded-lg border border-white/10 p-8">
-            <p className="text-sm uppercase tracking-[0.3em] text-cyan-100/70">Monsoon Aurora</p>
+            <p className="text-sm uppercase tracking-[0.3em] text-emerald-400/80">Premium Creator Cockpit</p>
             <h1 className="mt-4 max-w-md text-5xl font-bold leading-tight text-white">
-              Misty dashboards, strict schemas, glowing public forms.
+              Build cinematically, validate strictly, collect securely.
             </h1>
-            <div className="mt-8 grid grid-cols-3 gap-3 text-sm">
-              {["tRPC", "Drizzle", "Scalar"].map((item) => (
-                <div key={item} className="rounded-md border border-white/10 bg-slate-950/35 p-3 text-cyan-50">
-                  {item}
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </div>
