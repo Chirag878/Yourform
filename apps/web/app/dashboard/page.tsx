@@ -13,6 +13,7 @@ import {
   Pencil,
   Plus,
   Sparkles,
+  QrCode,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -47,6 +48,7 @@ export default function DashboardPage() {
   const utils = trpc.useUtils();
   const [hasToken, setHasToken] = useState(false);
   const [draftTitle, setDraftTitle] = useState("Untitled mist form");
+  const [activeQrUrl, setActiveQrUrl] = useState<string | null>(null);
 
   useEffect(() => {
     setHasToken(Boolean(getAuthToken()));
@@ -239,6 +241,12 @@ export default function DashboardPage() {
                   <Button size="sm" variant="ghost" className="text-cyan-50 hover:bg-white/10 hover:text-white" onClick={() => copyPublicLink(form)}>
                     <Copy />
                   </Button>
+                  <Button size="sm" variant="ghost" className="text-cyan-50 hover:bg-white/10 hover:text-white" onClick={() => {
+                    const url = `${window.location.origin}${form.publicUrl}`;
+                    setActiveQrUrl(url);
+                  }}>
+                    <QrCode className="size-4" />
+                  </Button>
                 </div>
               </div>
             ))}
@@ -269,6 +277,32 @@ export default function DashboardPage() {
             ))}
           </div>
         </section>
+
+        {activeQrUrl && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+            <div className="glass-panel w-full max-w-sm rounded-lg p-6 sm:p-8 text-center space-y-6">
+              <h2 className="text-xl font-bold text-white flex items-center justify-center gap-2">
+                <QrCode className="size-6 text-cyan-400" /> Share QR Code
+              </h2>
+              <p className="text-sm text-cyan-50/70">
+                Scan this code to instantly load and complete your public form.
+              </p>
+              <div className="flex justify-center bg-white p-4 rounded-md mx-auto w-fit border border-cyan-200/20 shadow-lg">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(activeQrUrl)}`}
+                  alt="QR Code"
+                  className="size-[180px]"
+                />
+              </div>
+              <Button
+                onClick={() => setActiveQrUrl(null)}
+                className="w-full bg-cyan-200 text-slate-950 hover:bg-cyan-100 font-medium"
+              >
+                Close Modal
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
