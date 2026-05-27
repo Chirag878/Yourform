@@ -2,16 +2,23 @@ import { z } from "../../schema";
 import { formsService } from "../../services";
 import { publicProcedure, router } from "../../trpc";
 import { generatePath } from "../../utils/path-generator";
-import { handleServiceError } from "../shared";
+import { handleServiceError, publicFormFetchOutputSchema } from "../shared";
 
 const TAGS = ["Public Forms"];
 const getPath = generatePath("/public-forms");
 
 export const publicFormsRouter = router({
   getByToken: publicProcedure
-    .meta({ openapi: { method: "GET", path: getPath("/{token}"), tags: TAGS } })
+    .meta({
+      openapi: {
+        method: "GET",
+        path: getPath("/{token}"),
+        tags: TAGS,
+        summary: "Fetch a published form by public or unlisted token",
+      },
+    })
     .input(z.object({ token: z.string().min(4) }))
-    .output(z.unknown())
+    .output(publicFormFetchOutputSchema)
     .query(async ({ ctx, input }) => {
       try {
         return await formsService.getPublicByToken({ token: input.token, userId: ctx.user?.id });
@@ -21,7 +28,14 @@ export const publicFormsRouter = router({
     }),
 
   submit: publicProcedure
-    .meta({ openapi: { method: "POST", path: getPath("/{token}/submissions"), tags: TAGS } })
+    .meta({
+      openapi: {
+        method: "POST",
+        path: getPath("/{token}/submissions"),
+        tags: TAGS,
+        summary: "Submit a response for a published form",
+      },
+    })
     .input(
       z.object({
         token: z.string().min(4),
@@ -48,10 +62,7 @@ export const publicFormsRouter = router({
           userAgent: ctx.userAgent,
         });
       } catch (error) {
-        return handleServiceError(
-          error,
-          error instanceof Error && error.message.includes("signed in") ? "UNAUTHORIZED" : "BAD_REQUEST",
-        );
+        return handleServiceError(error);
       }
     }),
 });

@@ -6,7 +6,8 @@
     "start": "dotenv -e ../../.env -- node dist/index.js",
     "dev": "tsx watch ./src/index.ts",
     "build": "tsup",
-    "lint": "eslint src/*"
+    "lint": "eslint src/*",
+    "test": "echo \"No tests configured\""
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",

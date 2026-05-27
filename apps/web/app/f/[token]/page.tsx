@@ -52,6 +52,7 @@ export default function PublicFormPage() {
   const fields = definition?.fields ?? [];
   const currentField = fields[step];
   const progress = useMemo(() => (fields.length ? ((step + 1) / fields.length) * 100 : 0), [fields.length, step]);
+  const canGoNext = currentField ? !(currentField.required && isEmpty(currentField, answers[currentField.id])) : false;
 
   const setAnswer = (fieldId: string, value: unknown) => {
     setAnswers((current) => ({ ...current, [fieldId]: value }));
@@ -145,7 +146,7 @@ export default function PublicFormPage() {
           <input className="hidden" tabIndex={-1} value={honeypot} onChange={(event) => setHoneypot(event.target.value)} aria-hidden="true" />
 
           {currentField ? (
-            <div className="min-h-[260px] animate-in fade-in slide-in-from-right-2 duration-300">
+            <div key={currentField.id} className="min-h-[260px] animate-in fade-in slide-in-from-right-2 duration-300">
               <p className="text-sm text-cyan-50/55">
                 {step + 1} of {fields.length}
               </p>
@@ -171,7 +172,7 @@ export default function PublicFormPage() {
                 Submit
               </Button>
             ) : (
-              <Button onClick={next} className="bg-cyan-200 text-slate-950 hover:bg-cyan-100">
+              <Button onClick={next} disabled={!canGoNext} className="bg-cyan-200 text-slate-950 hover:bg-cyan-100 disabled:opacity-50">
                 Next
                 <ChevronRight />
               </Button>
