@@ -1,4 +1,4 @@
-import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { db } from "@repo/database/client";
 import { usersTable } from "@repo/database/schema";
@@ -13,6 +13,7 @@ export type PublicUser = {
   fullName: string;
   email: string;
   role: "Creator" | "User" | null;
+  emailVerified: boolean;
 };
 
 type SessionPayload = {
@@ -28,7 +29,12 @@ const toPublicUser = (user: typeof usersTable.$inferSelect): PublicUser => ({
   fullName: user.fullName,
   email: user.email,
   role: user.role,
+  emailVerified: !!user.emailVerified,
 });
+
+const hashForResetToken = (passwordHash: string) => {
+  return createHash("md5").update(passwordHash || "").digest("hex");
+};
 
 const hashPassword = (password: string) => {
   const salt = randomBytes(16).toString("hex");
@@ -63,7 +69,14 @@ class UserService {
     const isGoogleConfigured = !!(env.GOOGLE_OAUTH_CLIENT_ID && env.GOOGLE_OAUTH_CLIENT_SECRET);
 
     if (isGoogleConfigured) {
-      const url = googleOAuth2Client.generateAuthUrl();
+      const url = googleOAuth2Client.generateAuthUrl({
+        access_type: "offline",
+        scope: [
+          "https://www.googleapis.com/auth/userinfo.profile",
+          "https://www.googleapis.com/auth/userinfo.email",
+        ],
+        prompt: "select_account",
+      });
       supportedAuthenticationProviders.push({
         provider: "GOOGLE_OAUTH",
         displayName: "Google",
@@ -91,13 +104,19 @@ class UserService {
       .values({
         fullName: input.fullName.trim(),
         email,
-        emailVerified: true,
+        emailVerified: false,
         passwordHash: hashPassword(input.password),
         role: "Creator",
       })
       .returning();
 
     if (!user) throw new Error("Unable to create account.");
+
+    // Generate verification JWT token and print to terminal console in dev mode
+    const verificationToken = this.createVerificationToken(user.id, user.email);
+    const verificationLink = `${env.APP_URL ?? "http://localhost:8080"}/auth/verify?token=${verificationToken}`;
+    console.log(`\n[MAILER FALLBACK] Verification link for ${user.email}:\n${verificationLink}\n`);
+
     return { user: toPublicUser(user), token: this.createSessionToken(user) };
   }
 
@@ -137,6 +156,173 @@ class UserService {
     } catch {
       return null;
     }
+  }
+
+  public createVerificationToken(userId: string, email: string): string {
+    const payload = {
+      sub: userId,
+      email,
+      type: "email-verification",
+      exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // 24 hours
+    };
+    const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
+    return `${encoded}.${signPayload(encoded)}`;
+  }
+
+  public verifyVerificationToken(token: string): { sub: string; email: string } {
+    const [encoded, signature] = token.split(".");
+    if (!encoded || !signature || signPayload(encoded) !== signature) {
+      throw new Error("Invalid verification signature");
+    }
+    const payload = JSON.parse(Buffer.from(encoded, "base64url").toString("utf8"));
+    if (payload.type !== "email-verification") {
+      throw new Error("Invalid token type");
+    }
+    if (payload.exp < Math.floor(Date.now() / 1000)) {
+      throw new Error("Verification token has expired");
+    }
+    return { sub: payload.sub, email: payload.email };
+  }
+
+  public async verifyEmail(token: string): Promise<PublicUser> {
+    const { sub } = this.verifyVerificationToken(token);
+    const [user] = await db
+      .update(usersTable)
+      .set({ emailVerified: true })
+      .where(eq(usersTable.id, sub))
+      .returning();
+    if (!user) {
+      throw new Error("User not found");
+    }
+    return toPublicUser(user);
+  }
+
+  public async resendVerificationEmail(userId: string): Promise<void> {
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    if (user.emailVerified) {
+      throw new Error("Email is already verified");
+    }
+    const verificationToken = this.createVerificationToken(user.id, user.email);
+    const verificationLink = `${env.APP_URL ?? "http://localhost:8080"}/auth/verify?token=${verificationToken}`;
+    console.log(`\n[MAILER FALLBACK] Verification link for ${user.email}:\n${verificationLink}\n`);
+  }
+
+  public async requestPasswordReset(emailInput: string): Promise<void> {
+    const email = emailInput.trim().toLowerCase();
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
+    if (!user) {
+      console.log(`[MAILER FALLBACK] Password reset requested for non-existent email: ${email}`);
+      return;
+    }
+    const passHashSig = hashForResetToken(user.passwordHash || "");
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      passHash: passHashSig,
+      type: "password-reset",
+      exp: Math.floor(Date.now() / 1000) + 60 * 60, // 1 hour
+    };
+    const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
+    const token = `${encoded}.${signPayload(encoded)}`;
+    const resetLink = `${env.APP_URL ?? "http://localhost:8080"}/auth/reset-password?token=${token}`;
+    console.log(`\n[MAILER FALLBACK] Password reset link for ${user.email}:\n${resetLink}\n`);
+  }
+
+  public async resetPassword(token: string, newPassword: string): Promise<void> {
+    const [encoded, signature] = token.split(".");
+    if (!encoded || !signature || signPayload(encoded) !== signature) {
+      throw new Error("Invalid reset signature");
+    }
+    const payload = JSON.parse(Buffer.from(encoded, "base64url").toString("utf8"));
+    if (payload.type !== "password-reset") {
+      throw new Error("Invalid token type");
+    }
+    if (payload.exp < Math.floor(Date.now() / 1000)) {
+      throw new Error("Reset token has expired");
+    }
+
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, payload.sub)).limit(1);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const passHashSig = hashForResetToken(user.passwordHash || "");
+    if (payload.passHash !== passHashSig) {
+      throw new Error("This reset token has already been used or is invalid");
+    }
+
+    const newPasswordHash = hashPassword(newPassword);
+    await db
+      .update(usersTable)
+      .set({ passwordHash: newPasswordHash, emailVerified: true })
+      .where(eq(usersTable.id, user.id));
+  }
+
+  public async googleCallback(code: string): Promise<{ user: PublicUser; token: string }> {
+    if (!env.GOOGLE_OAUTH_CLIENT_ID || !env.GOOGLE_OAUTH_CLIENT_SECRET) {
+      throw new Error("Google OAuth is not configured on this server.");
+    }
+
+    const { tokens } = await googleOAuth2Client.getToken(code);
+    if (!tokens.id_token) {
+      throw new Error("No ID token returned by Google.");
+    }
+
+    const ticket = await googleOAuth2Client.verifyIdToken({
+      idToken: tokens.id_token,
+      audience: env.GOOGLE_OAUTH_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      throw new Error("Invalid profile payload from Google.");
+    }
+
+    const email = payload.email.trim().toLowerCase();
+    const fullName = payload.name || payload.given_name || "Google User";
+    const profileImageUrl = payload.picture || null;
+
+    let [user] = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
+
+    if (user) {
+      if (!user.emailVerified || user.provider !== "GOOGLE_OAUTH") {
+        const [updatedUser] = await db
+          .update(usersTable)
+          .set({
+            emailVerified: true,
+            provider: user.provider === "credentials" ? "credentials" : "GOOGLE_OAUTH",
+            profileImageUrl: user.profileImageUrl || profileImageUrl,
+          })
+          .where(eq(usersTable.id, user.id))
+          .returning();
+        if (updatedUser) {
+          user = updatedUser;
+        }
+      }
+    } else {
+      const [newUser] = await db
+        .insert(usersTable)
+        .values({
+          fullName,
+          email,
+          emailVerified: true,
+          provider: "GOOGLE_OAUTH",
+          role: "Creator",
+          profileImageUrl,
+        })
+        .returning();
+      if (!newUser) {
+        throw new Error("Unable to register user via Google.");
+      }
+      user = newUser;
+    }
+
+    return {
+      user: toPublicUser(user),
+      token: this.createSessionToken(user),
+    };
   }
 }
 

@@ -1,6 +1,6 @@
 import { z } from "../../schema";
 import { formsService } from "../../services";
-import { protectedProcedure, router } from "../../trpc";
+import { verifiedProcedure, router } from "../../trpc";
 import { generatePath } from "../../utils/path-generator";
 import { analyticsFieldBreakdownOutputSchema, analyticsSummaryOutputSchema, handleServiceError } from "../shared";
 
@@ -8,7 +8,7 @@ const TAGS = ["Analytics"];
 const getPath = generatePath("/analytics");
 
 export const analyticsRouter = router({
-  summary: protectedProcedure
+  summary: verifiedProcedure
     .meta({
       openapi: {
         method: "GET",
@@ -28,7 +28,7 @@ export const analyticsRouter = router({
       }
     }),
 
-  timeSeries: protectedProcedure
+  timeSeries: verifiedProcedure
     .meta({ openapi: { method: "GET", path: getPath("/forms/{formId}/time-series"), tags: TAGS, protect: true } })
     .input(z.object({ formId: z.string().uuid(), days: z.number().int().min(1).max(90).optional() }))
     .output(z.array(z.object({ date: z.string(), responses: z.number() })))
@@ -40,7 +40,7 @@ export const analyticsRouter = router({
       }
     }),
 
-  fieldBreakdown: protectedProcedure
+  fieldBreakdown: verifiedProcedure
     .meta({
       openapi: {
         method: "GET",

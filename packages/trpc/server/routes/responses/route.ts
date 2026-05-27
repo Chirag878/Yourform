@@ -1,6 +1,6 @@
 import { z } from "../../schema";
 import { formsService } from "../../services";
-import { protectedProcedure, router } from "../../trpc";
+import { verifiedProcedure, router } from "../../trpc";
 import { generatePath } from "../../utils/path-generator";
 import { handleServiceError, responsesListOutputSchema, submissionDetailOutputSchema } from "../shared";
 
@@ -8,7 +8,7 @@ const TAGS = ["Responses"];
 const getPath = generatePath("/responses");
 
 export const responsesRouter = router({
-  listByForm: protectedProcedure
+  listByForm: verifiedProcedure
     .meta({
       openapi: {
         method: "GET",
@@ -34,7 +34,7 @@ export const responsesRouter = router({
       }
     }),
 
-  getSubmissionDetail: protectedProcedure
+  getSubmissionDetail: verifiedProcedure
     .meta({
       openapi: {
         method: "GET",

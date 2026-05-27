@@ -1,6 +1,6 @@
 import { z } from "../../schema";
 import { formsService } from "../../services";
-import { protectedProcedure, router } from "../../trpc";
+import { verifiedProcedure, router } from "../../trpc";
 import { generatePath } from "../../utils/path-generator";
 import {
   formDefinitionSchema,
@@ -15,7 +15,7 @@ const TAGS = ["Forms"];
 const getPath = generatePath("/forms");
 
 export const formsRouter = router({
-  createDraft: protectedProcedure
+  createDraft: verifiedProcedure
     .meta({ openapi: { method: "POST", path: getPath("/drafts"), tags: TAGS, protect: true } })
     .input(
       z.object({
@@ -35,7 +35,7 @@ export const formsRouter = router({
       }
     }),
 
-  updateDraftSchema: protectedProcedure
+  updateDraftSchema: verifiedProcedure
     .meta({ openapi: { method: "POST", path: getPath("/{formId}/schema"), tags: TAGS, protect: true } })
     .input(
       z.object({
@@ -55,7 +55,7 @@ export const formsRouter = router({
       }
     }),
 
-  publish: protectedProcedure
+  publish: verifiedProcedure
     .meta({ openapi: { method: "POST", path: getPath("/{formId}/publish"), tags: TAGS, protect: true } })
     .input(z.object({ formId: z.string().uuid() }))
     .output(formOutputSchema)
@@ -67,7 +67,7 @@ export const formsRouter = router({
       }
     }),
 
-  listMine: protectedProcedure
+  listMine: verifiedProcedure
     .meta({ openapi: { method: "GET", path: getPath(""), tags: TAGS, protect: true } })
     .input(
       z.object({
@@ -84,7 +84,7 @@ export const formsRouter = router({
       }
     }),
 
-  getById: protectedProcedure
+  getById: verifiedProcedure
     .meta({ openapi: { method: "GET", path: getPath("/{formId}"), tags: TAGS, protect: true } })
     .input(z.object({ formId: z.string().uuid() }))
     .output(formOutputSchema)

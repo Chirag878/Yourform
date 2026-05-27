@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -42,6 +43,7 @@ type FormCard = {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
   const utils = trpc.useUtils();
   const [hasToken, setHasToken] = useState(false);
   const [draftTitle, setDraftTitle] = useState("Untitled mist form");
@@ -54,6 +56,13 @@ export default function DashboardPage() {
     enabled: hasToken,
     retry: false,
   });
+
+  useEffect(() => {
+    if (me.data && !me.data.emailVerified) {
+      router.push("/auth/verify");
+    }
+  }, [me.data, router]);
+
   const forms = trpc.forms.listMine.useQuery(
     { limit: 50, offset: 0 },
     {

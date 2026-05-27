@@ -1,6 +1,6 @@
 import { zodUndefinedModel, z } from "../../schema";
 import { formsService } from "../../services";
-import { protectedProcedure, publicProcedure, router } from "../../trpc";
+import { verifiedProcedure, publicProcedure, router } from "../../trpc";
 import { generatePath } from "../../utils/path-generator";
 import { formOutputSchema, handleServiceError, responseAuthModeSchema, visibilitySchema } from "../shared";
 
@@ -27,7 +27,7 @@ export const templatesRouter = router({
     .output(z.array(templateOutputSchema))
     .query(() => formsService.listTemplates()),
 
-  createFromTemplate: protectedProcedure
+  createFromTemplate: verifiedProcedure
     .meta({ openapi: { method: "POST", path: getPath("/{templateKey}/forms"), tags: TAGS, protect: true } })
     .input(
       z.object({

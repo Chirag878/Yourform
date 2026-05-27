@@ -8,6 +8,7 @@ import {
   formVersionsTable,
   submissionAnswersTable,
   submissionsTable,
+  usersTable,
 } from "@repo/database/schema";
 import { getTemplateByKey, templateCatalog } from "../templates";
 import { createSubmissionRateLimiter } from "./rate-limit";
@@ -384,6 +385,44 @@ class FormsService {
       return created;
     });
 
+    // Dispatch confirmation email to respondent (if authenticated)
+    let respondentEmail = null;
+    if (input.userId) {
+      const [respondent] = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.id, input.userId))
+        .limit(1);
+      if (respondent) {
+        respondentEmail = respondent.email;
+      }
+    }
+
+    if (respondentEmail) {
+      console.log(
+        `\n[MAILER FALLBACK] Confirmation email sent to Responder (${respondentEmail}) for Form "${publicForm.form.title}":\n` +
+        `Subject: Submission Captured: ${publicForm.form.title}\n` +
+        `Hi! Your submission for the form "${publicForm.form.title}" was successfully recorded on ${submission.submittedAt.toISOString()}.\n`
+      );
+    }
+
+    // Dispatch confirmation email to creator (always)
+    if (publicForm.form.createdBy) {
+      const [creator] = await db
+        .select()
+        .from(usersTable)
+        .where(eq(usersTable.id, publicForm.form.createdBy))
+        .limit(1);
+
+      if (creator) {
+        console.log(
+          `\n[MAILER FALLBACK] Confirmation email sent to Creator (${creator.email}) for Form "${publicForm.form.title}":\n` +
+          `Subject: New Response Received for ${publicForm.form.title}\n` +
+          `Hi ${creator.fullName}, you have received a new response for your form "${publicForm.form.title}" on ${submission.submittedAt.toISOString()}.\n`
+        );
+      }
+    }
+
     return {
       submissionId: submission.id,
       status: submission.status,
@@ -590,6 +629,7 @@ class FormsService {
       shareToken: form.shareToken,
       publicToken: publicTokenFor(form),
       publicUrl: `/f/${publicTokenFor(form)}`,
+      createdBy: form.createdBy,
       isPublished: form.isPublished,
       createdAt: form.createdAt,
       updatedAt: form.updatedAt,

@@ -8,11 +8,14 @@ import { TRPCError } from "@trpc/server";
 const TAGS = ["Authentication"];
 const getPath = generatePath("/authentication");
 
+
+
 const publicUserSchema = z.object({
   id: z.string().uuid(),
   fullName: z.string(),
   email: z.string().email(),
   role: z.enum(["Creator", "User"]).nullable(),
+  emailVerified: z.boolean(),
 });
 
 const authOutputSchema = z.object({
@@ -99,4 +102,103 @@ export const authRouter = router({
     .input(zodUndefinedModel)
     .output(publicUserSchema)
     .query(({ ctx }) => ctx.user),
+
+  googleCallback: publicProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: getPath("/google-callback"),
+        tags: TAGS,
+        summary: "Callback for Google OAuth",
+      },
+    })
+    .input(z.object({ code: z.string() }))
+    .output(authOutputSchema)
+    .mutation(async ({ input }) => {
+      try {
+        return await userService.googleCallback(input.code);
+      } catch (error) {
+        return toAuthError(error);
+      }
+    }),
+
+  requestPasswordReset: publicProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: getPath("/request-password-reset"),
+        tags: TAGS,
+        summary: "Request a password reset link",
+      },
+    })
+    .input(z.object({ email: z.string().email() }))
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ input }) => {
+      try {
+        await userService.requestPasswordReset(input.email);
+        return { success: true };
+      } catch (error) {
+        return toAuthError(error);
+      }
+    }),
+
+  resetPassword: publicProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: getPath("/reset-password"),
+        tags: TAGS,
+        summary: "Reset password using token",
+      },
+    })
+    .input(z.object({ token: z.string(), password: z.string().min(8).max(120) }))
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ input }) => {
+      try {
+        await userService.resetPassword(input.token, input.password);
+        return { success: true };
+      } catch (error) {
+        return toAuthError(error);
+      }
+    }),
+
+  verifyEmail: publicProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: getPath("/verify-email"),
+        tags: TAGS,
+        summary: "Verify email using token",
+      },
+    })
+    .input(z.object({ token: z.string() }))
+    .output(publicUserSchema)
+    .mutation(async ({ input }) => {
+      try {
+        return await userService.verifyEmail(input.token);
+      } catch (error) {
+        return toAuthError(error);
+      }
+    }),
+
+  resendVerificationEmail: protectedProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: getPath("/resend-verification"),
+        tags: TAGS,
+        summary: "Resend email verification token",
+        protect: true,
+      },
+    })
+    .input(zodUndefinedModel)
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ ctx }) => {
+      try {
+        await userService.resendVerificationEmail(ctx.user.id);
+        return { success: true };
+      } catch (error) {
+        return toAuthError(error);
+      }
+    }),
 });

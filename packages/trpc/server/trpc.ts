@@ -29,3 +29,28 @@ const requireUser = tRPCContext.middleware(({ ctx, next }) => {
 });
 
 export const protectedProcedure = publicProcedure.use(requireUser);
+
+const requireVerifiedUser = tRPCContext.middleware(({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Sign in to continue.",
+    });
+  }
+
+  if (!ctx.user.emailVerified) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Your email is not verified. Please verify your email to access this resource.",
+    });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user,
+    },
+  });
+});
+
+export const verifiedProcedure = publicProcedure.use(requireVerifiedUser);
