@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, BarChart3, Clock, Eye, FileText, HelpCircle, Layers, ShieldCheck } from "lucide-react";
+import { ArrowLeft, BarChart3, Clock, Eye, FileText, HelpCircle, Layers, ShieldCheck, Download } from "lucide-react";
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -52,6 +52,30 @@ export default function ResponsesListPage() {
   const theme = (form.data?.themeVariant as string | undefined) ?? "mist-valley";
   const responseData = responsesQuery.data as { items?: SubmissionRow[]; limit: number; offset: number } | undefined;
   const submissions = responseData?.items ?? [];
+
+  const downloadCSV = () => {
+    if (submissions.length === 0) return;
+    const headers = ["Submission ID", "Status", "Duration (ms)", "Started At", "Submitted At"];
+    const rows = submissions.map((row) => [
+      row.id,
+      row.status,
+      row.durationMs ?? "",
+      row.startedAt ? new Date(row.startedAt).toISOString() : "",
+      new Date(row.submittedAt).toISOString(),
+    ]);
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      [headers.join(","), ...rows.map((e) => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(","))].join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `submissions-${formId}-${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const getStatusBadge = (status: SubmissionRow["status"]) => {
     switch (status) {
@@ -136,7 +160,19 @@ export default function ResponsesListPage() {
                 <FileText className="size-5 text-cyan-100" />
                 <span>All Responses ({submissions.length})</span>
               </div>
-              <span className="text-xs text-cyan-100/50">Showing last {limit} items</span>
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={downloadCSV}
+                  disabled={submissions.length === 0}
+                  size="sm"
+                  variant="outline"
+                  className="border-white/10 bg-white/5 text-cyan-100 hover:bg-white/10"
+                >
+                  <Download className="size-4 mr-2" />
+                  Export CSV
+                </Button>
+                <span className="text-xs text-cyan-100/50">Showing last {limit} items</span>
+              </div>
             </div>
 
             {responsesQuery.isLoading ? (
