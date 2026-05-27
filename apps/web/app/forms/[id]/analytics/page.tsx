@@ -82,6 +82,14 @@ export default function AnalyticsPage() {
     );
   }
 
+  if (form.isLoading || summary.isLoading || timeSeries.isLoading || breakdown.isLoading || responses.isLoading) {
+    return (
+      <main className="aurora-shell flex min-h-screen items-center justify-center px-5">
+        <div className="glass-panel rounded-lg px-8 py-6 text-cyan-50">Loading analytics…</div>
+      </main>
+    );
+  }
+
   return (
     <main className={`aurora-shell theme-${theme} min-h-screen px-5 py-6 sm:px-8 lg:px-10`}>
       <div className="mx-auto max-w-7xl">

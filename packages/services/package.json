@@ -14,5 +14,8 @@
     "drizzle-orm": "^0.45.1",
     "google-auth-library": "^10.5.0",
     "zod": "^4.3.5"
+  },
+  "scripts": {
+    "test": "tsx --test forms/*.test.ts"
   }
 }

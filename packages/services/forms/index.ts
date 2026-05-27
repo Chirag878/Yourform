@@ -10,21 +10,17 @@ import {
   submissionsTable,
 } from "@repo/database/schema";
 import { getTemplateByKey, templateCatalog } from "../templates";
+import { createSubmissionRateLimiter } from "./rate-limit";
+import { FormsServiceError } from "./errors";
 
 type FormRow = typeof formsTable.$inferSelect;
 type VersionRow = typeof formVersionsTable.$inferSelect;
 
-type RateLimitBucket = {
-  count: number;
-  resetAt: number;
-};
-
 const schemaCache = new Map<string, ReturnType<typeof compileToSubmissionSchema>>();
-const submissionBuckets = new Map<string, RateLimitBucket>();
-
 const payloadByteLimit = 200 * 1024;
 const rateLimitWindowMs = 10 * 60 * 1000;
 const rateLimitMax = 30;
+const submissionRateLimiter = createSubmissionRateLimiter(rateLimitWindowMs, rateLimitMax);
 
 const slugify = (input: string) =>
   input
@@ -160,7 +156,7 @@ class FormsService {
     responseAuthMode?: "PUBLIC" | "AUTHENTICATED";
   }) {
     const template = getTemplateByKey(input.templateKey);
-    if (!template) throw new Error("Template not found.");
+    if (!template) throw new FormsServiceError("Template not found.", "NOT_FOUND");
 
     return this.createDraft({
       userId: input.userId,
@@ -192,8 +188,8 @@ class FormsService {
         .where(and(eq(formsTable.id, input.formId), eq(formsTable.createdBy, input.userId)))
         .limit(1);
 
-      if (!form) throw new Error("Form not found.");
-      if (form.status === "Closed") throw new Error("Closed forms cannot be edited.");
+      if (!form) throw new FormsServiceError("Form not found.", "NOT_FOUND");
+      if (form.status === "Closed") throw new FormsServiceError("Closed forms cannot be edited.", "FORBIDDEN");
 
       const [latest] = await tx
         .select()
@@ -238,7 +234,7 @@ class FormsService {
   public async publish(input: { userId: string; formId: string }) {
     const form = await this.getOwnedForm(input.userId, input.formId);
     const version = await this.getCurrentVersion(form);
-    if (!version) throw new Error("Form does not have a version to publish.");
+    if (!version) throw new FormsServiceError("Form does not have a version to publish.", "BAD_REQUEST");
 
     await db.transaction(async (tx) => {
       await tx
@@ -284,7 +280,7 @@ class FormsService {
   public async getById(input: { userId: string; formId: string }) {
     const form = await this.getOwnedForm(input.userId, input.formId);
     const version = await this.getCurrentVersion(form);
-    if (!version) throw new Error("Form version not found.");
+    if (!version) throw new FormsServiceError("Form version not found.", "NOT_FOUND");
     return this.serializeForm(form, version, parseDefinition(version.schemaJson));
   }
 
@@ -301,7 +297,7 @@ class FormsService {
       )
       .limit(1);
 
-    if (!form || form.visibility === "Private") throw new Error("Form not found.");
+    if (!form || form.visibility === "Private") throw new FormsServiceError("Form not found.", "NOT_FOUND");
 
     if (form.responseAuthMode === "AUTHENTICATED" && !input.userId) {
       return {
@@ -312,7 +308,7 @@ class FormsService {
     }
 
     const version = await this.getCurrentVersion(form);
-    if (!version) throw new Error("Form version not found.");
+    if (!version) throw new FormsServiceError("Form version not found.", "NOT_FOUND");
 
     return {
       form: this.serializeFormMeta(form),
@@ -332,12 +328,14 @@ class FormsService {
     ip?: string | null;
     userAgent?: string | null;
   }) {
-    if (input.honeypot) throw new Error("Submission rejected.");
-    if (JSON.stringify(input.answers).length > payloadByteLimit) throw new Error("Submission payload is too large.");
+    if (input.honeypot) throw new FormsServiceError("Submission rejected.", "BAD_REQUEST");
+    if (Buffer.byteLength(JSON.stringify(input.answers), "utf8") > payloadByteLimit) {
+      throw new FormsServiceError("Submission payload is too large.", "PAYLOAD_TOO_LARGE");
+    }
 
     const publicForm = await this.getPublicByToken({ token: input.token, userId: input.userId });
     if (publicForm.requiresAuth || !publicForm.definition || !publicForm.versionId) {
-      throw new Error("You must be signed in to submit this form.");
+      throw new FormsServiceError("You must be signed in to submit this form.", "UNAUTHORIZED");
     }
 
     const formId = publicForm.form.id;
@@ -349,7 +347,7 @@ class FormsService {
 
     const parsed = schema.safeParse(input.answers);
     if (!parsed.success) {
-      throw new Error(parsed.error.issues.map((issue) => issue.message).join("; "));
+      throw new FormsServiceError(parsed.error.issues.map((issue) => issue.message).join("; "), "BAD_REQUEST");
     }
 
     const submission = await db.transaction(async (tx) => {
@@ -363,7 +361,7 @@ class FormsService {
           durationMs: input.durationMs ?? null,
           ipHash: hashValue(input.ip),
           unHash: hashValue(input.userAgent),
-          startedAt: input.startedAt ? new Date(input.startedAt) : null,
+          startedAt: input.startedAt && !Number.isNaN(Date.parse(input.startedAt)) ? new Date(input.startedAt) : null,
         })
         .returning();
 
@@ -430,7 +428,7 @@ class FormsService {
       .where(and(eq(submissionsTable.id, input.submissionId), eq(submissionsTable.formId, input.formId)))
       .limit(1);
 
-    if (!submission) throw new Error("Submission not found.");
+    if (!submission) throw new FormsServiceError("Submission not found.", "NOT_FOUND");
 
     const answers = await db
       .select()
@@ -495,7 +493,7 @@ class FormsService {
   public async fieldBreakdown(input: { userId: string; formId: string }) {
     const form = await this.getOwnedForm(input.userId, input.formId);
     const version = await this.getCurrentVersion(form);
-    if (!version) throw new Error("Form version not found.");
+    if (!version) throw new FormsServiceError("Form version not found.", "NOT_FOUND");
     const definition = parseDefinition(version.schemaJson);
     const breakdownFields = definition.fields.filter((field) =>
       ["select", "multi-select", "boolean"].includes(field.kind),
@@ -535,7 +533,7 @@ class FormsService {
       .from(formsTable)
       .where(and(eq(formsTable.id, formId), eq(formsTable.createdBy, userId)))
       .limit(1);
-    if (!form) throw new Error("Form not found.");
+    if (!form) throw new FormsServiceError("Form not found.", "NOT_FOUND");
     return form;
   }
 
@@ -559,15 +557,10 @@ class FormsService {
   }
 
   private checkRateLimit(key: string) {
-    const now = Date.now();
-    const bucket = submissionBuckets.get(key);
-    if (!bucket || bucket.resetAt < now) {
-      submissionBuckets.set(key, { count: 1, resetAt: now + rateLimitWindowMs });
-      return;
+    const result = submissionRateLimiter.hit(key);
+    if (!result.allowed) {
+      throw new FormsServiceError("Too many submissions. Please try again soon.", "TOO_MANY_REQUESTS");
     }
-
-    if (bucket.count >= rateLimitMax) throw new Error("Too many submissions. Please try again soon.");
-    bucket.count += 1;
   }
 
   private serializeForm(form: FormRow, version: VersionRow, definition: FormDefinition) {
