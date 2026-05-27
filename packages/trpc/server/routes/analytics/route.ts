@@ -2,16 +2,24 @@ import { z } from "../../schema";
 import { formsService } from "../../services";
 import { protectedProcedure, router } from "../../trpc";
 import { generatePath } from "../../utils/path-generator";
-import { handleServiceError } from "../shared";
+import { analyticsFieldBreakdownOutputSchema, analyticsSummaryOutputSchema, handleServiceError } from "../shared";
 
 const TAGS = ["Analytics"];
 const getPath = generatePath("/analytics");
 
 export const analyticsRouter = router({
   summary: protectedProcedure
-    .meta({ openapi: { method: "GET", path: getPath("/forms/{formId}/summary"), tags: TAGS, protect: true } })
+    .meta({
+      openapi: {
+        method: "GET",
+        path: getPath("/forms/{formId}/summary"),
+        tags: TAGS,
+        protect: true,
+        summary: "Get aggregate analytics for a form",
+      },
+    })
     .input(z.object({ formId: z.string().uuid() }))
-    .output(z.unknown())
+    .output(analyticsSummaryOutputSchema)
     .query(async ({ ctx, input }) => {
       try {
         return await formsService.analyticsSummary({ userId: ctx.user.id, formId: input.formId });
@@ -33,9 +41,17 @@ export const analyticsRouter = router({
     }),
 
   fieldBreakdown: protectedProcedure
-    .meta({ openapi: { method: "GET", path: getPath("/forms/{formId}/field-breakdown"), tags: TAGS, protect: true } })
+    .meta({
+      openapi: {
+        method: "GET",
+        path: getPath("/forms/{formId}/field-breakdown"),
+        tags: TAGS,
+        protect: true,
+        summary: "Get per-field option distributions",
+      },
+    })
     .input(z.object({ formId: z.string().uuid() }))
-    .output(z.unknown())
+    .output(analyticsFieldBreakdownOutputSchema)
     .query(async ({ ctx, input }) => {
       try {
         return await formsService.fieldBreakdown({ userId: ctx.user.id, formId: input.formId });
