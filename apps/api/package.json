@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "node dist/index.js",
-    "dev": "dotenv -- tsx watch ./src/index.ts",
+    "start": "dotenv -e ../../.env -- node dist/index.js",
+    "dev": "dotenv -e ../../.env -- tsx watch ./src/index.ts",
     "build": "tsup",
     "lint": "eslint src/*"
   },

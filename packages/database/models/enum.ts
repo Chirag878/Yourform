@@ -4,11 +4,21 @@ export const userRoleEnum = pgEnum("user_role", ["Creator", "User"]);
 
 export const formStatusEnum = pgEnum("form_status", ["Draft", "Published","Closed"]);
 
-export const  formVisibilityEnum = pgEnum("visibility", ["Public", "Private"]);
+export const formVisibilityEnum = pgEnum("visibility", ["Public", "Unlisted", "Private"]);
 
 export const submissionAuthModeEnum = pgEnum("response_auth_mode", ["PUBLIC", "AUTHENTICATED"]);
 
-export const formGenreEnum = pgEnum("genre", ["FEEDBACK", "SURVEY", "EVENTS", "JOB","CUSTOM" ]);
+export const formGenreEnum = pgEnum("genre", [
+  "FEEDBACK",
+  "SURVEY",
+  "EVENTS",
+  "JOB",
+  "SPORTS",
+  "ANIME",
+  "TV",
+  "TRAVEL",
+  "CONTACT",
+  "CUSTOM",
+]);
 
 export const submissionStatusEnum = pgEnum("submission_status", ["In_PROGRESS", "COMPLETED", "PARTIAL", "ABANDONED"]);
-

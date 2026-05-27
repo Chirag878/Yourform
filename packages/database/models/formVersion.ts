@@ -5,6 +5,7 @@ import {
   jsonb,
   timestamp,
   unique,
+  index,
 } from "drizzle-orm/pg-core";
 
 import { formsTable } from "./form";
@@ -28,7 +29,7 @@ export const formVersionsTable = pgTable(
       .notNull()
       .references(() => usersTable.id),
     
-   createAt: timestamp("created_at",{withTimezone: true}).notNull().defaultNow(),
+   createdAt: timestamp("created_at",{withTimezone: true}).notNull().defaultNow(),
    
    publishedAt: timestamp("published_at",{withTimezone: true}),
 
@@ -36,5 +37,6 @@ export const formVersionsTable = pgTable(
   (table) => {
     return {
       uniqueFormVersion: unique("unique_form_version").on(table.formId, table.version),
+      formVersionsFormIdIdx: index("form_versions_form_id_idx").on(table.formId),
     };
   });

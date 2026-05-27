@@ -5,6 +5,7 @@ import {
   jsonb,
   boolean,
   unique,
+  index,
 } from "drizzle-orm/pg-core";
 
 import { submissionsTable } from "./submissions";
@@ -23,6 +24,7 @@ export const submissionAnswersTable = pgTable(
         isValid: boolean("is_valid").notNull().default(true),
     },
     (table) => ({
+        submissionAnswersFieldIdIdx: index("submission_answers_field_id_idx").on(table.fieldId),
         uniqueSubmissionField: unique().on(table.submissionId, table.fieldId),
     })
 );

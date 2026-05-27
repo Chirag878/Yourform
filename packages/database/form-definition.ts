@@ -1,12 +1,23 @@
-import {z} from "zod";
+import { z } from "zod";
+
+export const themeVariantSchema = z.enum([
+  "soft-sakura",
+  "zen-slate",
+  "lantern-pulse",
+  "aurora-grid",
+  "stadium-neon",
+  "neon-night",
+  "mist-valley",
+]);
 
 const baseFieldSchema = z.object({
   id: z.string().min(2).max(120),
   label: z.string().min(2).max(200),
+  description: z.string().max(300).optional(),
   required: z.boolean().default(false),
 }); 
 
-const  shortTextFieldSchema = baseFieldSchema.extend({
+const shortTextFieldSchema = baseFieldSchema.extend({
   kind: z.literal("short-text"),
   minLength: z.number().min(0).int(),
   maxLength: z.number().min(1).int(),
@@ -65,11 +76,13 @@ export const fieldSchema = z.discriminatedUnion("kind", [
 ]);
 
 export const formDefinitionSchema = z.object({
-    title: z.string().min(2).max(200),
-    description: z.string().max(500).optional(),
-    fields: z.array(fieldSchema).min(1),
+  title: z.string().min(2).max(200),
+  description: z.string().max(1000).optional(),
+  category: z.string().max(120).optional(),
+  themeVariant: themeVariantSchema.default("mist-valley"),
+  fields: z.array(fieldSchema).min(1),
 });
 
 export type FormDefinition = z.infer<typeof formDefinitionSchema>;
-export type Field= z.infer<typeof fieldSchema>;
-
+export type Field = z.infer<typeof fieldSchema>;
+export type ThemeVariant = z.infer<typeof themeVariantSchema>;
