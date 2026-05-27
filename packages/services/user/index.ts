@@ -4,6 +4,7 @@ import { db } from "@repo/database/client";
 import { usersTable } from "@repo/database/schema";
 import { env } from "../env";
 import { googleOAuth2Client } from "../clients/google-oauth";
+import { sendMailOrLog } from "../clients/mailer";
 import { GetAuthenticationMethodOutputSchema } from "./model";
 
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
@@ -112,10 +113,15 @@ class UserService {
 
     if (!user) throw new Error("Unable to create account.");
 
-    // Generate verification JWT token and print to terminal console in dev mode
     const verificationToken = this.createVerificationToken(user.id, user.email);
     const verificationLink = `${env.APP_URL ?? "http://localhost:8080"}/auth/verify?token=${verificationToken}`;
-    console.log(`\n[MAILER FALLBACK] Verification link for ${user.email}:\n${verificationLink}\n`);
+    await sendMailOrLog({
+      to: user.email,
+      subject: "Verify your email",
+      text: `Verify your email by opening: ${verificationLink}`,
+      html: `<p>Verify your email by clicking <a href="${verificationLink}">this link</a>.</p>`,
+      fallbackLabel: "Verification link",
+    });
 
     return { user: toPublicUser(user), token: this.createSessionToken(user) };
   }
@@ -207,7 +213,13 @@ class UserService {
     }
     const verificationToken = this.createVerificationToken(user.id, user.email);
     const verificationLink = `${env.APP_URL ?? "http://localhost:8080"}/auth/verify?token=${verificationToken}`;
-    console.log(`\n[MAILER FALLBACK] Verification link for ${user.email}:\n${verificationLink}\n`);
+    await sendMailOrLog({
+      to: user.email,
+      subject: "Verify your email",
+      text: `Verify your email by opening: ${verificationLink}`,
+      html: `<p>Verify your email by clicking <a href="${verificationLink}">this link</a>.</p>`,
+      fallbackLabel: "Verification link",
+    });
   }
 
   public async requestPasswordReset(emailInput: string): Promise<void> {
@@ -228,7 +240,13 @@ class UserService {
     const encoded = Buffer.from(JSON.stringify(payload)).toString("base64url");
     const token = `${encoded}.${signPayload(encoded)}`;
     const resetLink = `${env.APP_URL ?? "http://localhost:8080"}/auth/reset-password?token=${token}`;
-    console.log(`\n[MAILER FALLBACK] Password reset link for ${user.email}:\n${resetLink}\n`);
+    await sendMailOrLog({
+      to: user.email,
+      subject: "Reset your password",
+      text: `Reset your password by opening: ${resetLink}`,
+      html: `<p>Reset your password by clicking <a href="${resetLink}">this link</a>.</p>`,
+      fallbackLabel: "Password reset link",
+    });
   }
 
   public async resetPassword(token: string, newPassword: string): Promise<void> {
