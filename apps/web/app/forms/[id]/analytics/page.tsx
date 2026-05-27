@@ -92,11 +92,16 @@ export default function AnalyticsPage() {
               Dashboard
             </Link>
           </Button>
-          {form.data ? (
+          <div className="flex gap-2">
             <Button asChild variant="outline" className="border-white/15 bg-white/10 text-white hover:bg-white/15 hover:text-white">
-              <Link href={`/builder/${formId}`}>Open builder</Link>
+              <Link href={`/forms/${formId}/responses`}>Responses</Link>
             </Button>
-          ) : null}
+            {form.data ? (
+              <Button asChild variant="outline" className="border-white/15 bg-white/10 text-white hover:bg-white/15 hover:text-white">
+                <Link href={`/builder/${formId}`}>Open builder</Link>
+              </Button>
+            ) : null}
+          </div>
         </nav>
 
         <header className="glass-panel mt-6 rounded-lg p-6 sm:p-8">

@@ -4,6 +4,7 @@
   "scripts": {
     "db:migrate": "drizzle-kit migrate",
     "db:generate": "drizzle-kit generate",
+    "db:seed": "tsx seed.ts",
     "dev": "drizzle-kit studio"
   },
   "devDependencies": {

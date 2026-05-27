@@ -7,6 +7,7 @@ import {
   BarChart3,
   CloudRain,
   Copy,
+  FileText,
   LogOut,
   Pencil,
   Plus,
@@ -218,6 +219,12 @@ export default function DashboardPage() {
                     <Link href={`/forms/${form.id}/analytics`}>
                       <BarChart3 />
                       Analytics
+                    </Link>
+                  </Button>
+                  <Button asChild size="sm" variant="outline" className="border-white/15 bg-white/10 text-white hover:bg-white/15 hover:text-white">
+                    <Link href={`/forms/${form.id}/responses`}>
+                      <FileText />
+                      Responses
                     </Link>
                   </Button>
                   <Button size="sm" variant="ghost" className="text-cyan-50 hover:bg-white/10 hover:text-white" onClick={() => copyPublicLink(form)}>
