@@ -139,7 +139,11 @@ export default function AnalyticsPage() {
                   <CartesianGrid stroke="rgba(255,255,255,0.1)" />
                   <XAxis dataKey="date" stroke="rgba(230,255,255,0.65)" tick={{ fontSize: 12 }} />
                   <YAxis allowDecimals={false} stroke="rgba(230,255,255,0.65)" tick={{ fontSize: 12 }} />
-                  <RechartsTooltip contentStyle={{ background: "#0b162d", border: "1px solid rgba(255,255,255,0.15)", color: "white" }} />
+                  <RechartsTooltip 
+                    contentStyle={{ background: "#0b162d", border: "1px solid rgba(255,255,255,0.15)", color: "white" }} 
+                    itemStyle={{ color: "white" }}
+                    labelStyle={{ color: "white" }}
+                  />
                   <Line type="monotone" dataKey="responses" stroke="#7df9ff" strokeWidth={3} dot={{ fill: "#ff8acb" }} />
                 </LineChart>
               </ResponsiveContainer>
@@ -157,7 +161,11 @@ export default function AnalyticsPage() {
                         <Cell key={entry.option} fill={chartColors[index % chartColors.length]} />
                       ))}
                     </Pie>
-                    <RechartsTooltip contentStyle={{ background: "#0b162d", border: "1px solid rgba(255,255,255,0.15)", color: "white" }} />
+                    <RechartsTooltip 
+                      contentStyle={{ background: "#0b162d", border: "1px solid rgba(255,255,255,0.15)", color: "white" }} 
+                      itemStyle={{ color: "white" }}
+                      labelStyle={{ color: "white" }}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
@@ -181,7 +189,11 @@ export default function AnalyticsPage() {
                         <CartesianGrid stroke="rgba(255,255,255,0.08)" />
                         <XAxis dataKey="option" stroke="rgba(230,255,255,0.6)" tick={{ fontSize: 11 }} />
                         <YAxis allowDecimals={false} stroke="rgba(230,255,255,0.6)" tick={{ fontSize: 11 }} />
-                        <RechartsTooltip contentStyle={{ background: "#0b162d", border: "1px solid rgba(255,255,255,0.15)", color: "white" }} />
+                        <RechartsTooltip 
+                          contentStyle={{ background: "#0b162d", border: "1px solid rgba(255,255,255,0.15)", color: "white" }} 
+                          itemStyle={{ color: "white" }}
+                          labelStyle={{ color: "white" }}
+                        />
                         <Bar dataKey="count" fill="#72e6c0" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
