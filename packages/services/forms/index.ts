@@ -401,7 +401,7 @@ class FormsService {
     }
 
     if (respondentEmail) {
-      await EmailService.sendMail({
+      EmailService.sendMail({
         to: respondentEmail,
         subject: `Submission Captured: ${publicForm.form.title}`,
         html: EmailService.getRespondentConfirmationTemplate(
@@ -411,27 +411,28 @@ class FormsService {
       }).catch((err) => console.error("Failed to send respondent confirmation email:", err));
     }
 
-    // Dispatch confirmation email to creator (always)
+    // Dispatch confirmation email to creator (always) in the background
     if (publicForm.form.createdBy) {
-      const [creator] = await db
-        .select()
+      db.select()
         .from(usersTable)
         .where(eq(usersTable.id, publicForm.form.createdBy))
-        .limit(1);
-
-      if (creator) {
-        const dashboardUrl = `${env.APP_URL ?? "http://localhost:8080"}/dashboard`;
-        await EmailService.sendMail({
-          to: creator.email,
-          subject: `New Response Received for ${publicForm.form.title}`,
-          html: EmailService.getCreatorAlertTemplate(
-            creator.fullName,
-            publicForm.form.title,
-            submission.submittedAt.toLocaleString(),
-            dashboardUrl
-          ),
-        }).catch((err) => console.error("Failed to send creator alert email:", err));
-      }
+        .limit(1)
+        .then(([creator]) => {
+          if (creator) {
+            const dashboardUrl = `${env.APP_URL ?? "http://localhost:8080"}/dashboard`;
+            EmailService.sendMail({
+              to: creator.email,
+              subject: `New Response Received for ${publicForm.form.title}`,
+              html: EmailService.getCreatorAlertTemplate(
+                creator.fullName,
+                publicForm.form.title,
+                submission.submittedAt.toLocaleString(),
+                dashboardUrl
+              ),
+            }).catch((err) => console.error("Failed to send creator alert email:", err));
+          }
+        })
+        .catch((err) => console.error("Failed to fetch creator for notification:", err));
     }
 
     return {
