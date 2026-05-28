@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Copy, Eye, Plus, Rocket, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Copy, Eye, Plus, Rocket, Save, Trash2, QrCode } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
@@ -36,6 +36,7 @@ export default function BuilderPage() {
   const [visibility, setVisibility] = useState<"Public" | "Unlisted" | "Private">("Unlisted");
   const [responseAuthMode, setResponseAuthMode] = useState<"PUBLIC" | "AUTHENTICATED">("PUBLIC");
   const [definition, setDefinition] = useState<FormDefinition | null>(null);
+  const [showQr, setShowQr] = useState(false);
 
   const form = trpc.forms.getById.useQuery({ formId }, { retry: false });
 
@@ -161,6 +162,14 @@ export default function BuilderPage() {
             >
               <Copy />
               Copy link
+            </Button>
+            <Button
+              variant="outline"
+              className="border-white/15 bg-white/10 text-white hover:bg-white/15 hover:text-white"
+              onClick={() => setShowQr(true)}
+            >
+              <QrCode className="size-4" />
+              Share QR
             </Button>
             <Button onClick={save} disabled={updateSchema.isPending} className="bg-cyan-200 text-slate-950 hover:bg-cyan-100">
               <Save />
@@ -371,6 +380,31 @@ export default function BuilderPage() {
             ))}
           </section>
         </div>
+        {showQr && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+            <div className="glass-panel w-full max-w-sm rounded-lg p-6 sm:p-8 text-center space-y-6">
+              <h2 className="text-xl font-bold text-white flex items-center justify-center gap-2">
+                <QrCode className="size-6 text-cyan-400" /> Share QR Code
+              </h2>
+              <p className="text-sm text-cyan-50/70">
+                Scan this code to instantly load and complete your public form.
+              </p>
+              <div className="flex justify-center bg-white p-4 rounded-md mx-auto w-fit border border-cyan-200/20 shadow-lg">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(publicUrl)}`}
+                  alt="QR Code"
+                  className="size-[180px]"
+                />
+              </div>
+              <Button
+                onClick={() => setShowQr(false)}
+                className="w-full bg-cyan-200 text-slate-950 hover:bg-cyan-100 font-medium"
+              >
+                Close Modal
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
