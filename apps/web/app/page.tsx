@@ -22,12 +22,15 @@ export default function Home() {
           </Link>
           <div className="flex items-center gap-3">
             <Button asChild variant="ghost" className="text-cyan-50 hover:bg-white/10 hover:text-white">
+              <Link href="/pricing">Pricing Plan</Link>
+            </Button>
+            <Button asChild variant="ghost" className="text-cyan-50 hover:bg-white/10 hover:text-white">
               <Link href="/auth">Login</Link>
             </Button>
             <Button asChild className="bg-cyan-200 text-slate-950 hover:bg-cyan-100">
               <Link href="/dashboard">
                 Dashboard
-                <ArrowRight />
+                <ArrowRight className="size-4 ml-1" />
               </Link>
             </Button>
           </div>
