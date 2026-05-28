@@ -356,10 +356,9 @@ export default function BuilderPage() {
                   <div className="mt-4 grid gap-4 md:grid-cols-3">
                     <div className="md:col-span-3">
                       <Label>Options</Label>
-                      <Input
-                        value={compactOptions(field.options)}
-                        onChange={(event) => updateField(index, { options: parseOptions(event.target.value) })}
-                        className="mt-2 bg-white/10"
+                      <OptionsInput
+                        options={field.options}
+                        onChange={(opts) => updateField(index, { options: opts })}
                       />
                     </div>
                     {field.kind === "multi-select" ? (
@@ -407,5 +406,48 @@ export default function BuilderPage() {
         )}
       </div>
     </main>
+  );
+}
+
+interface OptionsInputProps {
+  options?: string[];
+  onChange: (options: string[]) => void;
+}
+
+function OptionsInput({ options, onChange }: OptionsInputProps) {
+  const [localValue, setLocalValue] = useState(() => (options ?? []).join(", "));
+
+  useEffect(() => {
+    const propOptions = options ?? [];
+    const localParsed = localValue
+      .split(",")
+      .map((opt) => opt.trim())
+      .filter(Boolean);
+
+    const isEquivalent =
+      propOptions.length === localParsed.length &&
+      propOptions.every((val, idx) => val === localParsed[idx]);
+
+    if (!isEquivalent) {
+      setLocalValue(propOptions.join(", "));
+    }
+  }, [options]);
+
+  const handleChange = (val: string) => {
+    setLocalValue(val);
+    const parsed = val
+      .split(",")
+      .map((opt) => opt.trim())
+      .filter(Boolean);
+    onChange(parsed);
+  };
+
+  return (
+    <Input
+      value={localValue}
+      onChange={(e) => handleChange(e.target.value)}
+      className="mt-2 bg-white/10"
+      placeholder="e.g. Option A, Option B, Option C"
+    />
   );
 }
