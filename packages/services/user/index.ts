@@ -105,22 +105,13 @@ class UserService {
       .values({
         fullName: input.fullName.trim(),
         email,
-        emailVerified: false,
+        emailVerified: true,
         passwordHash: hashPassword(input.password),
         role: "Creator",
       })
       .returning();
 
     if (!user) throw new Error("Unable to create account.");
-
-    // Generate verification JWT token and send the verification email
-    const verificationToken = this.createVerificationToken(user.id, user.email);
-    const verificationLink = `${env.APP_URL ?? "http://localhost:8080"}/auth/verify?token=${verificationToken}`;
-    await EmailService.sendMail({
-      to: user.email,
-      subject: "Verify Your YourForm Account",
-      html: EmailService.getVerifyEmailTemplate(user.fullName, verificationLink),
-    }).catch((err) => console.error("Failed to send signup verification email:", err));
 
     return { user: toPublicUser(user), token: this.createSessionToken(user) };
   }
