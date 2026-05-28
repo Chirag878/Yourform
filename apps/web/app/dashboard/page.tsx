@@ -14,6 +14,7 @@ import {
   Plus,
   Sparkles,
   QrCode,
+  Trash2,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -49,6 +50,7 @@ export default function DashboardPage() {
   const [hasToken, setHasToken] = useState(false);
   const [draftTitle, setDraftTitle] = useState("Untitled mist form");
   const [activeQrUrl, setActiveQrUrl] = useState<string | null>(null);
+  const [deleteFormId, setDeleteFormId] = useState<string | null>(null);
 
   useEffect(() => {
     setHasToken(Boolean(getAuthToken()));
@@ -73,6 +75,15 @@ export default function DashboardPage() {
     },
   );
   const templates = trpc.templates.listTemplates.useQuery(undefined);
+
+  const deleteFormMutation = trpc.forms.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Form deleted successfully");
+      utils.forms.listMine.invalidate();
+      setDeleteFormId(null);
+    },
+    onError: (error) => toast.error(error.message),
+  });
 
   const createDraft = trpc.forms.createDraft.useMutation({
     onSuccess: (form) => {
@@ -247,6 +258,9 @@ export default function DashboardPage() {
                   }}>
                     <QrCode className="size-4" />
                   </Button>
+                  <Button size="sm" variant="ghost" className="text-pink-300 hover:bg-pink-500/10 hover:text-pink-50" onClick={() => setDeleteFormId(form.id)}>
+                    <Trash2 className="size-4" />
+                  </Button>
                 </div>
               </div>
             ))}
@@ -300,6 +314,35 @@ export default function DashboardPage() {
               >
                 Close Modal
               </Button>
+            </div>
+          </div>
+        )}
+
+        {deleteFormId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+            <div className="glass-panel w-full max-w-sm rounded-lg p-6 sm:p-8 text-center space-y-6 border border-pink-500/30">
+              <h2 className="text-xl font-bold text-white flex items-center justify-center gap-2">
+                <Trash2 className="size-6 text-pink-400" /> Delete Form?
+              </h2>
+              <p className="text-sm text-cyan-50/70">
+                Are you sure you want to delete this form? This action is permanent and will permanently delete all form data, versions, and respondent submissions!
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setDeleteFormId(null)}
+                  variant="outline"
+                  className="flex-1 border-white/10 bg-white/5 text-white hover:bg-white/10"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => deleteFormMutation.mutate({ formId: deleteFormId })}
+                  disabled={deleteFormMutation.isPending}
+                  className="flex-1 bg-pink-500 text-white hover:bg-pink-600 font-medium"
+                >
+                  {deleteFormMutation.isPending ? "Deleting..." : "Yes, Delete"}
+                </Button>
+              </div>
             </div>
           </div>
         )}

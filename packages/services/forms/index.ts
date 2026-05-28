@@ -578,6 +578,12 @@ class FormsService {
     });
   }
 
+  public async delete(input: { userId: string; formId: string }) {
+    const form = await this.getOwnedForm(input.userId, input.formId);
+    await db.delete(formsTable).where(eq(formsTable.id, form.id));
+    return { success: true };
+  }
+
   private async getOwnedForm(userId: string, formId: string) {
     const [form] = await db
       .select()

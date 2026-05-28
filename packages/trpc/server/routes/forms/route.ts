@@ -95,4 +95,16 @@ export const formsRouter = router({
         return handleServiceError(error, "NOT_FOUND");
       }
     }),
+
+  delete: verifiedProcedure
+    .meta({ openapi: { method: "DELETE", path: getPath("/{formId}"), tags: TAGS, protect: true } })
+    .input(z.object({ formId: z.string().uuid() }))
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        return await formsService.delete({ userId: ctx.user.id, formId: input.formId });
+      } catch (error) {
+        return handleServiceError(error);
+      }
+    }),
 });
