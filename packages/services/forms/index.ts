@@ -13,6 +13,8 @@ import {
 import { getTemplateByKey, templateCatalog } from "../templates";
 import { createSubmissionRateLimiter } from "./rate-limit";
 import { FormsServiceError } from "./errors";
+import { env } from "../env";
+import { EmailService } from "../email";
 
 type FormRow = typeof formsTable.$inferSelect;
 type VersionRow = typeof formVersionsTable.$inferSelect;
@@ -399,11 +401,14 @@ class FormsService {
     }
 
     if (respondentEmail) {
-      console.log(
-        `\n[MAILER FALLBACK] Confirmation email sent to Responder (${respondentEmail}) for Form "${publicForm.form.title}":\n` +
-        `Subject: Submission Captured: ${publicForm.form.title}\n` +
-        `Hi! Your submission for the form "${publicForm.form.title}" was successfully recorded on ${submission.submittedAt.toISOString()}.\n`
-      );
+      await EmailService.sendMail({
+        to: respondentEmail,
+        subject: `Submission Captured: ${publicForm.form.title}`,
+        html: EmailService.getRespondentConfirmationTemplate(
+          publicForm.form.title,
+          submission.submittedAt.toLocaleString()
+        ),
+      }).catch((err) => console.error("Failed to send respondent confirmation email:", err));
     }
 
     // Dispatch confirmation email to creator (always)
@@ -415,11 +420,17 @@ class FormsService {
         .limit(1);
 
       if (creator) {
-        console.log(
-          `\n[MAILER FALLBACK] Confirmation email sent to Creator (${creator.email}) for Form "${publicForm.form.title}":\n` +
-          `Subject: New Response Received for ${publicForm.form.title}\n` +
-          `Hi ${creator.fullName}, you have received a new response for your form "${publicForm.form.title}" on ${submission.submittedAt.toISOString()}.\n`
-        );
+        const dashboardUrl = `${env.APP_URL ?? "http://localhost:8080"}/dashboard`;
+        await EmailService.sendMail({
+          to: creator.email,
+          subject: `New Response Received for ${publicForm.form.title}`,
+          html: EmailService.getCreatorAlertTemplate(
+            creator.fullName,
+            publicForm.form.title,
+            submission.submittedAt.toLocaleString(),
+            dashboardUrl
+          ),
+        }).catch((err) => console.error("Failed to send creator alert email:", err));
       }
     }
 
